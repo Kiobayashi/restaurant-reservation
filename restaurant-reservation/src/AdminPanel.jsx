@@ -170,17 +170,6 @@ const AdminPanel = () => {
 
   return (
     <div className="min-h-screen bg-white text-black px-6 py-10 flex flex-col items-center">
-      <button
-        onClick={() => {
-          localStorage.removeItem("isLoggedIn");
-          localStorage.removeItem("token");
-          window.location.href = "/admin";
-        }}
-        className="absolute top-6 right-6 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-      >
-        Wyloguj
-      </button>
-
       <div className="w-screen">
         <h1 className="text-4xl font-bold text-center py-6 bg-white">
           Panel administratora

@@ -26,7 +26,7 @@ const schema = yup.object().shape({
     .required("Wybierz godzinę")
     .test("is-valid-time", "Godzina poza zakresem 08:00–20:00", (value) => {
       if (!value) return false;
-      const hour = parseInt(value.split(":")[0]);
+      const hour = parseInt(value.split(":"[0]));
       return hour >= 8 && hour <= 20;
     }),
 });
@@ -49,10 +49,14 @@ const ReservationForm = ({ onReservationSaved }) => {
   });
 
   const onSubmit = async (data) => {
+    const token = localStorage.getItem("token");
     try {
       const response = await fetch("http://localhost:5000/api/reservations", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(data),
       });
 

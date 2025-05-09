@@ -4,9 +4,20 @@ const Reservation = require("../models/reservationModel");
 
 const router = express.Router();
 
+// 🔒 Dodawanie nowej rezerwacji (z userId i blokadą duplikatów)
 router.post("/", async (req, res) => {
   try {
-    const newReservation = new Reservation(req.body);
+    const { date, time } = req.body;
+    const userId = req.user.userId;
+
+    const exists = await Reservation.findOne({ date, time, userId });
+    if (exists) {
+      return res
+        .status(400)
+        .json({ message: "Masz już rezerwację na ten termin." });
+    }
+
+    const newReservation = new Reservation({ ...req.body, userId });
     const saved = await newReservation.save();
     res.status(201).json(saved);
   } catch (err) {
@@ -15,6 +26,7 @@ router.post("/", async (req, res) => {
   }
 });
 
+// 🔍 Pobieranie wszystkich rezerwacji (np. dla admina)
 router.get("/", async (req, res) => {
   try {
     const reservations = await Reservation.find();
@@ -25,6 +37,7 @@ router.get("/", async (req, res) => {
   }
 });
 
+// 🗑 Usuwanie rezerwacji
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
   try {
@@ -41,6 +54,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// ✏️ Aktualizacja rezerwacji
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
@@ -53,15 +67,13 @@ router.put("/:id", async (req, res) => {
     );
 
     if (!updatedReservation) {
-      return res
-        .status(404)
-        .json({ message: "Nie znaleziono rezerwacji do edycji" });
+      return res.status(404).json({ message: "Nie znaleziono rezerwacji" });
     }
 
     res.json(updatedReservation);
   } catch (err) {
     console.error("❌ Błąd przy aktualizacji:", err);
-    res.status(500).json({ message: "Błąd podczas edycji rezerwacji" });
+    res.status(500).json({ message: "Błąd serwera przy aktualizacji" });
   }
 });
 

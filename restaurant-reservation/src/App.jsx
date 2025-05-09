@@ -1,7 +1,9 @@
+// 📁 src/App.jsx
 import React, { useState } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import ReservationForm from "./ReservationForm";
 import AdminPanel from "./AdminPanel";
+import RegisterForm from "./RegisterForm";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -9,7 +11,7 @@ function App() {
   });
 
   const LoginPage = () => {
-    const [login, setLogin] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate();
@@ -18,15 +20,21 @@ function App() {
       e.preventDefault();
       setError("");
 
+      const isAdmin = email === "admin";
+      const url = isAdmin
+        ? "http://localhost:5000/api/admin-login"
+        : "http://localhost:5000/api/login";
+
       try {
-        const response = await fetch("http://localhost:5000/api/login", {
+        const response = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ login, password }),
+          body: JSON.stringify(
+            isAdmin ? { login: email, password } : { email, password }
+          ),
         });
 
         const data = await response.json();
-        console.log("Login response:", data);
 
         if (!response.ok || !data.token) {
           setError(data.message || "Błąd logowania");
@@ -36,7 +44,7 @@ function App() {
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("token", data.token);
         setIsLoggedIn(true);
-        navigate("/admin/panel");
+        navigate(isAdmin ? "/admin/panel" : "/");
       } catch (err) {
         setError("Błąd połączenia z serwerem");
       }
@@ -48,18 +56,18 @@ function App() {
           onSubmit={handleLogin}
           className="w-full max-w-sm bg-white text-black p-8 rounded-xl shadow-xl"
         >
-          <h2 className="text-2xl font-bold text-center mb-6">
-            Logowanie administratora
-          </h2>
+          <h2 className="text-2xl font-bold text-center mb-6">Logowanie</h2>
 
           <div className="mb-4">
-            <label className="block mb-1 font-medium">Login</label>
+            <label className="block mb-1 font-medium">
+              Email (lub "admin")
+            </label>
             <input
               type="text"
-              value={login}
-              onChange={(e) => setLogin(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full border px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder="Wpisz login"
+              placeholder="Wpisz email lub login admina"
             />
           </div>
 
@@ -82,20 +90,46 @@ function App() {
           >
             Zaloguj
           </button>
+
+          <p className="text-sm mt-4 text-center">
+            Nie masz konta?{" "}
+            <a href="/register" className="text-blue-500 underline">
+              Zarejestruj się
+            </a>
+          </p>
         </form>
       </div>
     );
   };
 
   return (
-    <Routes>
-      <Route path="/" element={<ReservationForm />} />
-      <Route path="/admin" element={<LoginPage />} />
-      <Route
-        path="/admin/panel"
-        element={isLoggedIn ? <AdminPanel /> : <Navigate to="/admin" />}
-      />
-    </Routes>
+    <div>
+      {isLoggedIn && (
+        <button
+          onClick={() => {
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("token");
+            window.location.href = "/login";
+          }}
+          className="absolute top-4 right-4 px-4 py-2 bg-red-600 text-white rounded"
+        >
+          Wyloguj
+        </button>
+      )}
+
+      <Routes>
+        <Route
+          path="/"
+          element={isLoggedIn ? <ReservationForm /> : <Navigate to="/login" />}
+        />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterForm />} />
+        <Route
+          path="/admin/panel"
+          element={isLoggedIn ? <AdminPanel /> : <Navigate to="/login" />}
+        />
+      </Routes>
+    </div>
   );
 }
 
